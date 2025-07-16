@@ -1,0 +1,8 @@
+[
+  { "name": "Aldo", "score": 150, "subject": "Matematika" },
+  { "name": "Bella", "score": 140, "subject": "Fisika" },
+  { "name": "Citra", "score": 135, "subject": "Bahasa Inggris" },
+  { "name": "Dewi", "score": 125, "subject": "Matematika" },
+  { "name": "Eka", "score": 120, "subject": "Fisika" },
+  { "name": "Fahri", "score": 115, "subject": "Bahasa Inggris" }
+]
