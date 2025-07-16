@@ -38,12 +38,4 @@
 
 ---
 
-### 🖼️ Screenshot (Tambahkan Sendiri)
 
-> Upload screenshot ke folder `screenshots/` atau Drive, lalu tautkan di bawah ini:
-
-```md
-![Home](screenshots/home.png)
-![Modul](screenshots/modul.png)
-![Kuis](screenshots/kuis.png)
-![Leaderboard](screenshots/leaderboard.png)
