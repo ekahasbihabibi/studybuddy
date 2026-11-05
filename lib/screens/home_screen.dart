@@ -11,7 +11,7 @@ import 'schedule_screen.dart';
 import 'target_screen.dart';
 import 'study_stats_screen..dart';
 import 'flashcard_subject_screen.dart';
-import 'leaderboard_screen.dart';
+import '../services/account_api.dart';
 import 'favorite_screen.dart';
 import 'scholarship_screen.dart';
 import 'study_abroad_screen.dart';
@@ -50,9 +50,21 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   final List<_FeatureItem> featureItems = [
-    _FeatureItem('Beasiswa', 'assets/beasiswa.png', destination: ScholarshipScreen()),
-    _FeatureItem('Siap Kuliah di Luar Negeri', 'assets/kuliah_luar.png', destination: StudyAbroadScreen()),
-    _FeatureItem('Siap Kerja di Luar Negeri', 'assets/kerja_luar.png', destination: WorkAbroadScreen()),
+    _FeatureItem(
+      'Beasiswa',
+      'assets/beasiswa.png',
+      destination: ScholarshipScreen(),
+    ),
+    _FeatureItem(
+      'Siap Kuliah di Luar Negeri',
+      'assets/kuliah_luar.png',
+      destination: StudyAbroadScreen(),
+    ),
+    _FeatureItem(
+      'Siap Kerja di Luar Negeri',
+      'assets/kerja_luar.png',
+      destination: WorkAbroadScreen(),
+    ),
     _FeatureItem('Tes\nTOEFL', 'assets/toefl.png', destination: TOEFLScreen()),
   ];
 
@@ -65,11 +77,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUserName() async {
     final email = await AuthService.getCurrentUserEmail();
     if (email != null) {
-      final profile = await AuthService.getUserProfile(email);
-      setState(() {
-        userName = "Halo, ${profile?['name'] ?? 'User'} 👋";
-        profileImageUrl = profile?['profile_picture'];
-      });
+      try {
+        final profile = await AuthService.getUserProfile(email);
+        if (!mounted) return;
+        setState(() {
+          userName = "Halo, ${profile['name'] ?? 'User'} 👋";
+          profileImageUrl = profile['profile_picture'];
+        });
+      } on AccountApiException catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
     }
   }
 
@@ -149,8 +169,12 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: CircleAvatar(
                 backgroundColor: Colors.blueAccent,
-                backgroundImage: profileImageUrl != null ? NetworkImage(profileImageUrl!) : null,
-                child: profileImageUrl == null ? const Icon(Icons.person, color: Colors.white) : null,
+                backgroundImage: profileImageUrl != null
+                    ? NetworkImage(profileImageUrl!)
+                    : null,
+                child: profileImageUrl == null
+                    ? const Icon(Icons.person, color: Colors.white)
+                    : null,
               ),
             ),
           ],
@@ -183,14 +207,18 @@ class _HomeScreenState extends State<HomeScreen> {
             if (query.isNotEmpty) {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ModuleScreen(searchQuery: query)),
+                MaterialPageRoute(
+                  builder: (_) => ModuleScreen(searchQuery: query),
+                ),
               );
             }
           },
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.all(16),
             backgroundColor: isDark ? Colors.white24 : Colors.blue,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
           child: const Icon(Icons.search, color: Colors.white),
         ),
@@ -206,11 +234,22 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildHorizontalMenu("Peringkat", Icons.leaderboard, isDark, () {
             Navigator.pushNamed(context, '/leaderboard-all');
           }),
-          _buildHorizontalMenu("Tips Belajar", Icons.tips_and_updates, isDark, () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => TipsScreen()));
-          }),
+          _buildHorizontalMenu(
+            "Tips Belajar",
+            Icons.tips_and_updates,
+            isDark,
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TipsScreen()),
+              );
+            },
+          ),
           _buildHorizontalMenu("Favorit", Icons.favorite, isDark, () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => FavoriteScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => FavoriteScreen()),
+            );
           }),
         ],
       ),
@@ -254,22 +293,40 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         switch (item.title) {
           case 'Modul':
-            Navigator.push(context, MaterialPageRoute(builder: (_) => ModuleScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ModuleScreen()),
+            );
             break;
           case 'Kuis':
-            Navigator.push(context, MaterialPageRoute(builder: (_) => QuizScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => QuizScreen()),
+            );
             break;
           case 'Jadwal':
-            Navigator.push(context, MaterialPageRoute(builder: (_) => ScheduleScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ScheduleScreen()),
+            );
             break;
           case 'Target':
-            Navigator.push(context, MaterialPageRoute(builder: (_) => TargetScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => TargetScreen()),
+            );
             break;
           case 'Statistik':
-            Navigator.push(context, MaterialPageRoute(builder: (_) => StudyStatsScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => StudyStatsScreen()),
+            );
             break;
           case 'Flashcard':
-            Navigator.push(context, MaterialPageRoute(builder: (_) => FlashcardSubjectScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => FlashcardSubjectScreen()),
+            );
             break;
         }
       },
@@ -297,7 +354,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHorizontalMenu(String label, IconData icon, bool isDark, VoidCallback onTap) {
+  Widget _buildHorizontalMenu(
+    String label,
+    IconData icon,
+    bool isDark,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -309,9 +371,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: isDark ? Colors.white70 : Colors.black87),
+            Icon(
+              icon,
+              size: 20,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
+            Text(
+              label,
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+            ),
           ],
         ),
       ),
@@ -322,7 +391,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Favorit Berdasarkan Pelajaran", style: _sectionTitleStyle(isDark)),
+        Text(
+          "Favorit Berdasarkan Pelajaran",
+          style: _sectionTitleStyle(isDark),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -365,7 +437,10 @@ class _HomeScreenState extends State<HomeScreen> {
             Text("Pilihan Belajar Terbaik", style: _sectionTitleStyle(isDark)),
             TextButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => BestChoiceScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => BestChoiceScreen()),
+                );
               },
               child: const Text("Lihat Semua"),
             ),
@@ -375,7 +450,9 @@ class _HomeScreenState extends State<HomeScreen> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: featureItems.map((item) => _buildFeatureOption(item)).toList(),
+            children: featureItems
+                .map((item) => _buildFeatureOption(item))
+                .toList(),
           ),
         ),
       ],
@@ -386,7 +463,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         if (item.destination != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => item.destination!));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => item.destination!),
+          );
         }
       },
       child: Container(
@@ -404,7 +484,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(item.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
+            Text(
+              item.title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12),
+            ),
           ],
         ),
       ),

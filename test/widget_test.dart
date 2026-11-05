@@ -1,30 +1,28 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:studybuddy/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('StudyBuddy opens the mobile login screen', (tester) async {
     await tester.pumpWidget(MyApp());
+    // Let the existing delayed form animation complete.
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Welcome to StudyBuddy'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(2));
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('Empty login validates without calling the backend', (
+    tester,
+  ) async {
+    await tester.pumpWidget(MyApp());
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Email dan password wajib diisi'), findsOneWidget);
   });
 }

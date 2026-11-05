@@ -10,6 +10,8 @@ class QuizScreen extends StatelessWidget {
     {'title': 'Kuis Fisika', 'questions': 12},
   ];
 
+  const QuizScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,30 +23,34 @@ class QuizScreen extends StatelessWidget {
           return Card(
             margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ListTile(
-              title: Text(quiz['title'], style: TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                quiz['title'],
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               subtitle: Text('${quiz['questions']} soal'),
               trailing: Icon(Icons.play_arrow),
-                onTap: () async {
-                  final score = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => QuizPlayScreen(quizTitle: quiz['title']),
+              onTap: () async {
+                final score = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => QuizPlayScreen(quizTitle: quiz['title']),
+                  ),
+                );
+
+                if (score != null) {
+                  final subject = quiz['title'];
+                  final email = await AuthService.getCurrentUserEmail();
+                  final name = (email ?? 'Guest').split('@')[0];
+
+                  await LeaderboardService.submitScore(name, score, subject);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Skor berhasil dikirim ke leaderboard'),
                     ),
                   );
-
-                  if (score != null) {
-                    final subject = quiz['title'];
-                    final email = await AuthService.getCurrentUserEmail();
-                    final name = (email ?? 'Guest').split('@')[0];
-
-                    await LeaderboardService.submitScore(name, score, subject);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Skor berhasil dikirim ke leaderboard')),
-                    );
-                  }
                 }
-
+              },
             ),
           );
         },

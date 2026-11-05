@@ -1,5 +1,5 @@
 name: studybuddy
-description: "A new Flutter project."
+description: "Aplikasi mobile StudyBuddy berbasis Flutter, dikembangkan melalui VS Code."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^0.13.6
   shared_preferences: ^2.2.2
+  flutter_secure_storage: 9.2.4
   carousel_slider: ^5.1.1
   open_file: ^3.3.2
   path_provider: ^2.1.2

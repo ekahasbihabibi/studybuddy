@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../data/flashcard_data.dart';
 
 class AddFlashcardScreen extends StatefulWidget {
+  const AddFlashcardScreen({super.key});
+
   @override
   _AddFlashcardScreenState createState() => _AddFlashcardScreenState();
 }
@@ -39,19 +41,19 @@ class _AddFlashcardScreenState extends State<AddFlashcardScreen> {
                 controller: _subjectController,
                 decoration: InputDecoration(labelText: 'Pelajaran'),
                 validator: (value) =>
-                value == null || value.isEmpty ? 'Wajib diisi' : null,
+                    value == null || value.isEmpty ? 'Wajib diisi' : null,
               ),
               TextFormField(
                 controller: _questionController,
                 decoration: InputDecoration(labelText: 'Pertanyaan'),
                 validator: (value) =>
-                value == null || value.isEmpty ? 'Wajib diisi' : null,
+                    value == null || value.isEmpty ? 'Wajib diisi' : null,
               ),
               TextFormField(
                 controller: _answerController,
                 decoration: InputDecoration(labelText: 'Jawaban'),
                 validator: (value) =>
-                value == null || value.isEmpty ? 'Wajib diisi' : null,
+                    value == null || value.isEmpty ? 'Wajib diisi' : null,
               ),
               SizedBox(height: 20),
               ElevatedButton(

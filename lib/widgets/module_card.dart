@@ -5,7 +5,7 @@ import '../screens/module_detail_screen.dart';
 class ModuleCard extends StatelessWidget {
   final Module module;
 
-  ModuleCard({required this.module});
+  const ModuleCard({super.key, required this.module});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,10 @@ class ModuleCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
       child: ListTile(
-        title: Text(module.title, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          module.title,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(module.description),
         trailing: Icon(Icons.arrow_forward_ios),
         onTap: () {

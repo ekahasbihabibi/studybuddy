@@ -7,9 +7,6 @@ import 'screens/best_choice_screen.dart';
 import 'package:studybuddy/screens/target_screen.dart';
 import 'screens/add_flashcard_screen.dart';
 
-
-
-
 void main() {
   runApp(MyApp());
 }
@@ -27,6 +24,8 @@ class ThemeNotifier extends ValueNotifier<ThemeMode> {
 final themeNotifier = ThemeNotifier();
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
@@ -45,7 +44,7 @@ class MyApp extends StatelessWidget {
             '/login': (context) => LoginScreen(),
             '/home': (context) => HomeScreen(),
             '/target': (context) => TargetScreen(),
-            '/add-flashcard': (context) => AddFlashcardScreen(),// opsional
+            '/add-flashcard': (context) => AddFlashcardScreen(), // opsional
             // tambahkan route lain jika ada
           },
         );

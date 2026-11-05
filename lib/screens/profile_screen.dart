@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 import '../services/auth_service.dart';
+import '../services/account_api.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,7 +17,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _profileImageUrl;
   bool _loading = true;
 
-  final String baseUrl = "http://192.168.100.109/studybuddy";
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -29,45 +31,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     final email = await AuthService.getCurrentUserEmail();
-    if (email != null) {
+    if (!mounted) return;
+    if (email == null) {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      return;
+    }
+    _email = email;
+    try {
       final profile = await AuthService.getUserProfile(email);
+      if (!mounted) return;
       setState(() {
-        _email = email;
-        _nameController.text = profile?['name'] ?? '';
-        _profileImageUrl = profile?['profile_picture'];
-        _loading = false;
+        _nameController.text = profile['name'] ?? '';
+        _profileImageUrl = profile['profile_picture'];
       });
+    } on AccountApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _pickAndUploadImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      imageQuality: 80,
+    );
     if (pickedFile == null) return;
 
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/upload_profile.php'),
-    );
-    request.fields['email'] = _email;
-    request.files.add(await http.MultipartFile.fromPath('image', pickedFile.path));
-
-    final response = await request.send();
-    final responseData = await response.stream.bytesToString();
-    final result = json.decode(responseData);
-
-    if (result['success']) {
-      setState(() {
-        _profileImageUrl = result['filename'] != null
-            ? '$baseUrl/uploads/${result['filename']}'
-            : null;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Foto berhasil diperbarui")),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal upload foto")),
-      );
+    try {
+      final picture = await AuthService.uploadProfilePicture(pickedFile.path);
+      if (!mounted) return;
+      setState(() => _profileImageUrl = picture);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Foto berhasil diperbarui')));
+    } on AccountApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
     }
   }
 
@@ -93,6 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirm == true) {
       final success = await AuthService.deleteProfilePicture(_email);
+      if (!mounted) return;
       if (success) {
         setState(() {
           _profileImageUrl = null;
@@ -101,9 +110,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SnackBar(content: Text("Foto profil berhasil dihapus")),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Gagal menghapus foto")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Gagal menghapus foto")));
       }
     }
   }
@@ -111,20 +120,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _saveProfile() async {
     final newName = _nameController.text.trim();
     final success = await AuthService.updateUserName(_email, newName);
+    if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Nama berhasil diperbarui")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Nama berhasil diperbarui")));
 
       // Navigasi ke HomeScreen setelah delay sedikit agar SnackBar sempat tampil
       Future.delayed(const Duration(milliseconds: 500), () {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        }
       });
-    }
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal memperbarui nama")),
-      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Gagal memperbarui nama")));
     }
   }
 
@@ -146,94 +157,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          children: [
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: _profileImageUrl != null
-                      ? NetworkImage(_profileImageUrl!)
-                      : null,
-                  child: _profileImageUrl == null
-                      ? const Icon(Icons.person, size: 60, color: Colors.white)
-                      : null,
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: GestureDetector(
-                    onTap: _pickAndUploadImage,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.indigo,
-                        shape: BoxShape.circle,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                children: [
+                  Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: _profileImageUrl != null
+                            ? NetworkImage(_profileImageUrl!)
+                            : null,
+                        child: _profileImageUrl == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.white,
+                              )
+                            : null,
                       ),
-                      child: const Icon(Icons.edit, size: 20, color: Colors.white),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _pickAndUploadImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Colors.indigo,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Tombol hapus foto jika ada foto
+                  if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: _deleteProfilePicture,
+                      icon: const Icon(Icons.delete_forever, color: Colors.red),
+                      label: const Text(
+                        "Hapus Foto",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+
+                  const SizedBox(height: 12),
+                  Text(
+                    _email,
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Lengkap',
+                      prefixIcon: const Icon(Icons.person),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Tombol hapus foto jika ada foto
-            if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
-              TextButton.icon(
-                onPressed: _deleteProfilePicture,
-                icon: const Icon(Icons.delete_forever, color: Colors.red),
-                label: const Text("Hapus Foto", style: TextStyle(color: Colors.red)),
-              ),
-
-            const SizedBox(height: 12),
-            Text(
-              _email,
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Nama Lengkap',
-                prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey[100],
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _saveProfile,
-              icon: const Icon(Icons.save),
-              label: const Text('Simpan'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 48),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _saveProfile,
+                    icon: const Icon(Icons.save),
+                    label: const Text('Simpan'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.indigo,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _logout,
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Logout'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _logout,
-              icon: const Icon(Icons.logout),
-              label: const Text('Logout'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 48),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

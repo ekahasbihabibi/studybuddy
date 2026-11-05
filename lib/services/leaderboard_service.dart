@@ -1,52 +1,39 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/leaderboard_entry.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'account_api.dart';
 
 class LeaderboardService {
-  static const String baseUrl = 'http://192.168.100.109/studybuddy'; // sesuaikan IP
-
-  static Future<void> submitScore(String name, int score, String subject) async {
-    final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('user_email') ?? '';
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/insert_score.php'),
-      body: {
-        'name': name,
-        'score': score.toString(),
-        'email': email,
-        'subject': subject,
-      },
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Gagal kirim skor');
-    }
+  static Future<void> submitScore(
+    String name,
+    int score,
+    String subject,
+  ) async {
+    // User identity and display name come from the authenticated account.
+    await AccountApi().submit('insert_score.php', {
+      'score': score.toString(),
+      'subject': subject,
+    }, authenticated: true);
   }
 
-  static Future<List<LeaderboardEntry>> fetchLeaderboardBySubject(String subject) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/get_leaderboard_by_subject.php?subject=${Uri.encodeComponent(subject)}'),
+  static Future<List<LeaderboardEntry>> fetchLeaderboardBySubject(
+    String subject,
+  ) async {
+    final data = await AccountApi().request(
+      'get_leaderboard_by_subject.php',
+      query: {'subject': subject},
     );
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((e) => LeaderboardEntry.fromJson(e)).toList();
-    } else {
-      throw Exception('Gagal mengambil leaderboard');
-    }
+    return (data['entries'] as List<dynamic>)
+        .map(
+          (entry) => LeaderboardEntry.fromJson(
+            Map<String, dynamic>.from(entry as Map),
+          ),
+        )
+        .toList();
   }
 
   static Future<Map<String, List<dynamic>>> fetchAllLeaderboards() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/get_all_leaderboard.php'),
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      return data.map((key, value) => MapEntry(key, List<dynamic>.from(value)));
-    } else {
-      throw Exception('Gagal mengambil semua leaderboard');
-    }
+    final data = await AccountApi().request('get_all_leaderboard.php');
+    return Map<String, dynamic>.from(
+      data['leaderboards'] as Map,
+    ).map((key, value) => MapEntry(key, List<dynamic>.from(value as List)));
   }
 }

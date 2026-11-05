@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/study_schedule.dart';
 
 class ScheduleScreen extends StatefulWidget {
+  const ScheduleScreen({super.key});
+
   @override
   _ScheduleScreenState createState() => _ScheduleScreenState();
 }
@@ -18,11 +20,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     if (subject.isEmpty) return;
 
     setState(() {
-      _schedules.add(StudySchedule(
-        subject: subject,
-        day: _selectedDay,
-        time: _selectedTime.format(context),
-      ));
+      _schedules.add(
+        StudySchedule(
+          subject: subject,
+          day: _selectedDay,
+          time: _selectedTime.format(context),
+        ),
+      );
       _subjectController.clear();
     });
   }
@@ -58,22 +62,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   _selectedDay = value!;
                 });
               },
-              items: [
-                'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
-              ].map((day) {
-                return DropdownMenuItem(
-                  value: day,
-                  child: Text(day),
-                );
-              }).toList(),
+              items:
+                  [
+                    'Senin',
+                    'Selasa',
+                    'Rabu',
+                    'Kamis',
+                    'Jumat',
+                    'Sabtu',
+                    'Minggu',
+                  ].map((day) {
+                    return DropdownMenuItem(value: day, child: Text(day));
+                  }).toList(),
             ),
             Row(
               children: [
                 Text('Jam: ${_selectedTime.format(context)}'),
-                TextButton(
-                  onPressed: _pickTime,
-                  child: Text('Pilih Jam'),
-                ),
+                TextButton(onPressed: _pickTime, child: Text('Pilih Jam')),
               ],
             ),
             ElevatedButton(
@@ -85,24 +90,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: _schedules.isEmpty
                   ? Center(child: Text('Belum ada jadwal.'))
                   : ListView.builder(
-                itemCount: _schedules.length,
-                itemBuilder: (context, index) {
-                  final schedule = _schedules[index];
-                  return ListTile(
-                    title: Text(schedule.subject),
-                    subtitle: Text('${schedule.day}, ${schedule.time}'),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        setState(() {
-                          _schedules.removeAt(index);
-                        });
+                      itemCount: _schedules.length,
+                      itemBuilder: (context, index) {
+                        final schedule = _schedules[index];
+                        return ListTile(
+                          title: Text(schedule.subject),
+                          subtitle: Text('${schedule.day}, ${schedule.time}'),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () {
+                              setState(() {
+                                _schedules.removeAt(index);
+                              });
+                            },
+                          ),
+                        );
                       },
                     ),
-                  );
-                },
-              ),
-            )
+            ),
           ],
         ),
       ),

@@ -1,20 +1,24 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:studybuddy/services/auth_service.dart';
+import '../services/account_api.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.accountApi});
+
+  final AccountApi? accountApi;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isSubmitting = false;
+  String? _errorMessage;
 
   late AnimationController _imageAnimController;
   late Animation<Offset> _imageSlideAnimation;
@@ -30,29 +34,25 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _imageSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, -1.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _imageAnimController,
-      curve: Curves.easeOutExpo,
-    ));
+    _imageSlideAnimation =
+        Tween<Offset>(begin: const Offset(0, -1.2), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _imageAnimController,
+            curve: Curves.easeOutExpo,
+          ),
+        );
 
     _formAnimController = AnimationController(
       duration: const Duration(milliseconds: 900),
       vsync: this,
     );
-    _formScaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _formAnimController,
-      curve: Curves.elasticOut,
-    ));
+    _formScaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _formAnimController, curve: Curves.elasticOut),
+    );
 
     _imageAnimController.forward();
     Future.delayed(const Duration(milliseconds: 500), () {
-      _formAnimController.forward();
+      if (mounted) _formAnimController.forward();
     });
   }
 
@@ -60,45 +60,55 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   void dispose() {
     _imageAnimController.dispose();
     _formAnimController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
+    if (_isSubmitting) return;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email dan password wajib diisi')),
-      );
+      setState(() => _errorMessage = 'Email dan password wajib diisi');
       return;
     }
 
-    final url = Uri.parse("http://192.168.100.109/studybuddy/login.php");
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({"email": email, "password": password}),
+      final data = await (widget.accountApi ?? AccountApi()).submit(
+        'login.php',
+        {'email': email, 'password': password},
       );
-
-      final data = json.decode(response.body);
+      if (!mounted) return;
       if (data['success'] == true) {
-        await AuthService.saveCurrentUserEmail(email);
+        await AuthService.saveSession(email, data);
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Login gagal')),
+        setState(
+          () => _errorMessage = data['message'] is String
+              ? data['message'] as String
+              : 'Email atau password tidak sesuai.',
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menghubungi server')),
-      );
+    } on AccountApiException catch (error) {
+      if (mounted) setState(() => _errorMessage = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Login belum berhasil. Coba lagi.');
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -165,6 +175,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       children: [
                         TextField(
                           controller: _emailController,
+                          enabled: !_isSubmitting,
+                          keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.email_outlined),
                             labelText: 'Email',
@@ -176,6 +188,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         const SizedBox(height: 20),
                         TextField(
                           controller: _passwordController,
+                          enabled: !_isSubmitting,
                           obscureText: true,
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.lock_outline),
@@ -185,12 +198,21 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             ),
                           ),
                         ),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 28),
                         SizedBox(
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: _login,
+                            onPressed: _isSubmitting ? null : _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.indigo,
                               foregroundColor: Colors.white,
@@ -198,30 +220,41 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Login',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 16),
                         TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => RegisterScreen(
-                                  onRegister: (email, password) {
-                                    _emailController.text = email;
-                                    _passwordController.text = password;
-                                  },
-                                ),
-                              ),
-                            );
-                          },
+                          onPressed: _isSubmitting
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => RegisterScreen(
+                                        accountApi: widget.accountApi,
+                                        onRegister: (email, password) {
+                                          _emailController.text = email;
+                                          _passwordController.text = password;
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
                           child: const Text(
                             'Belum punya akun? Daftar',
                             style: TextStyle(

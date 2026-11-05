@@ -1,0 +1,8 @@
+{
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "Dart-Code.dart-code"
+  },
+  "dart.openDevTools": "flutter",
+  "files.exclude": {"**/.dart_tool": true, "**/build": true}
+}

@@ -4,18 +4,21 @@ import 'flashcard_screen.dart';
 class FlashcardSubjectScreen extends StatelessWidget {
   final List<String> subjects = ["Matematika", "Bahasa Inggris", "Fisika"];
 
+  const FlashcardSubjectScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Pilih Pelajaran"),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.add),
-          onPressed: () {
-            Navigator.pushNamed(context, '/add-flashcard');
-          },
-        ),
-      ],
+      appBar: AppBar(
+        title: Text("Pilih Pelajaran"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              Navigator.pushNamed(context, '/add-flashcard');
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         itemCount: subjects.length,

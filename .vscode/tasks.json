@@ -1,0 +1,108 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "StudyBuddy: 1. Siapkan SDK tanpa Android Studio",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/setup-windows.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "StudyBuddy: 2. Jalankan di HP Android",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/run-android.ps1"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "StudyBuddy: Cek instalasi",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/flutter-command.ps1",
+        "doctor",
+        "-v"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "StudyBuddy: Download dependency",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/flutter-command.ps1",
+        "pub",
+        "get"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "StudyBuddy: Buat APK debug",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/flutter-command.ps1",
+        "build",
+        "apk",
+        "--debug",
+        "--dart-define-from-file=config/dev.json"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "StudyBuddy: 3. Siapkan backend dan database",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/setup-backend.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "StudyBuddy: 4. Jalankan server bersama",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/start-backend.ps1"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

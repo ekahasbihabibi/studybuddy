@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ScholarshipFormScreen extends StatefulWidget {
-  const ScholarshipFormScreen({Key? key}) : super(key: key);
+  const ScholarshipFormScreen({super.key});
 
   @override
   State<ScholarshipFormScreen> createState() => _ScholarshipFormScreenState();
@@ -20,9 +20,7 @@ class _ScholarshipFormScreenState extends State<ScholarshipFormScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Form Pengajuan Beasiswa"),
-      ),
+      appBar: AppBar(title: Text("Form Pengajuan Beasiswa")),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Form(
@@ -39,7 +37,8 @@ class _ScholarshipFormScreenState extends State<ScholarshipFormScreen> {
                 label: "Email",
                 keyboardType: TextInputType.emailAddress,
                 onSaved: (val) => email = val!,
-                validator: (val) => val!.contains('@') ? null : "Format email salah",
+                validator: (val) =>
+                    val!.contains('@') ? null : "Format email salah",
               ),
               SizedBox(height: 16),
               _buildTextField(
@@ -52,7 +51,8 @@ class _ScholarshipFormScreenState extends State<ScholarshipFormScreen> {
                 label: "Motivasi Mengikuti Beasiswa",
                 maxLines: 4,
                 onSaved: (val) => motivation = val!,
-                validator: (val) => val!.length < 10 ? "Minimal 10 karakter" : null,
+                validator: (val) =>
+                    val!.length < 10 ? "Minimal 10 karakter" : null,
               ),
               SizedBox(height: 24),
               ElevatedButton.icon(
@@ -61,7 +61,9 @@ class _ScholarshipFormScreenState extends State<ScholarshipFormScreen> {
                 label: Text("Kirim Pengajuan"),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
